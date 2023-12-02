@@ -35,6 +35,7 @@ void part1() {
     };
 
     int accumulator = 0;
+    int powerAccumulator = 0;
     size_t start, end;
     int gameID;
     smatch m;
@@ -45,10 +46,13 @@ void part1() {
         while(getline(input_file, line)) {
             cout << line << endl;
             
-            // reset counters for this game
-            game["red"] = 0;
-            game["green"] = 0;
-            game["blue"] = 0;
+            // reset counters for this game for part 2
+            // since the power of the cubes is multiplied
+            // set to 1 to get the identity property. easier
+            // than upserting.
+            game["red"] = 1;
+            game["green"] = 1;
+            game["blue"] = 1;
 
             // accumulate each round
             vector<bool> validRounds;
@@ -58,7 +62,6 @@ void part1() {
             string gamePrefix = line.substr(0, start);
             regex_match(gamePrefix, m, gameIDPattern);
             gameID = stoi(m[1].str());
-            // cout << "\t\t" << gameID << endl;
             start += 2;
 
             while((end = line.find(delimeter, start)) != string::npos) {
@@ -67,8 +70,16 @@ void part1() {
                 cout << "\t ROUND '" << round << "' " << endl;
                 auto r = parseRound(round);
                 bool b = isRoundValid(r);
+
+                //part 2
+                for (auto& [color, value] : r) {
+                    if (game[color] < value) {
+                        game[color] = value;
+                    }
+                }
+
                 validRounds.emplace_back(b);
-                cout << "\t\t... " << b << endl;
+                cout << "\t\t... round is valid? " << b << endl;
             }
 
             // handle the last round
@@ -76,8 +87,16 @@ void part1() {
             cout << "\t ROUND '" << round << "' (terminal) " << endl;
             auto r = parseRound(round);
             bool b = isRoundValid(r);
+
+            //part 2
+            for (auto& [color, value] : r) {
+                if (game[color] < value) {
+                    game[color] = value;
+                }
+            }
+
             validRounds.emplace_back(b);
-            cout << "\t\t... " << b << endl;
+            cout << "\t\t... round is valid? " << b << endl;
 
             if (all_of(validRounds.begin(), validRounds.end(), [](bool x) {return x == true;})) {
                 cout << "\t game " << gameID << " is valid" << endl;
@@ -87,6 +106,16 @@ void part1() {
                 cout << "\t game " << gameID << " is NOT OK" << endl;
             }
 
+            int power = 1;
+            cout << "\t\t" << "MINIMUMS: ";
+            for (auto& [color, value] : game) {
+                cout << color << "(" << value << ") ";
+                power *= value;
+            }
+            powerAccumulator += power;
+            cout << " with power = " << power;
+            cout << endl;
+
             cout << endl;
         } //end each line
 
@@ -94,7 +123,8 @@ void part1() {
         input_file.close();
     }
     
-    cout << accumulator << endl;
+    cout << "Sum of valid gameIDs: " << accumulator << endl;
+    cout << "Total power: " << powerAccumulator << endl;
 }
 
 bool isRoundValid(map<string, int>& round) {
