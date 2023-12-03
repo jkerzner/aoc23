@@ -78,7 +78,10 @@ void part1() {
 
     regex numPattern = regex("(\\d+)");
     regex punctPattern = regex("[^.a-z0-9]{1}");
-    int accumulator = 0;
+
+    //results
+    int accumulator = 0; // part 1
+    map<pair<int, int>, vector<int>> diffs;
 
     for(size_t row = 0; row < lines.size(); row++) {
         string line = lines[row];
@@ -107,6 +110,12 @@ void part1() {
             bool include_number = false;
             for (auto coord : coords) {
                 auto adjacent_character = string{lines[coord.first][coord.second]};
+
+                //part 2
+                if (adjacent_character == "*") {
+                    diffs[coord].push_back(found_number);
+                }
+
                 if ( regex_match(adjacent_character, punctPattern)) {
                     include_number = true;
                 }
@@ -123,7 +132,32 @@ void part1() {
         cout << endl;
     } // end foreach line
 
-    cout << "Sum of all part numbers: " << accumulator;
+    cout << "Sum of all part numbers: " << accumulator << endl;
+    cout << "---------------- END PART 1 ----------------\n\n\n";
+
+    int diff_accumulator = 0; // additive so 0 identity
+    for(auto& [coord, vals] : diffs) {
+        int current_ratio = 1;  // multiplying so 1 identity
+
+        if (vals.size() == 2) {
+            cout << "Including numbers from position (" << coord.first << ", " << coord.second << "):\n";
+            for (auto val : vals) {
+                current_ratio *= val;
+                cout << "\t" << val << " ";
+            }
+            diff_accumulator += current_ratio;
+        }
+        else {
+            cout << "Adj count was " << vals.size() << " so excluding at ";
+            cout << "(" << coord.first << ", " << coord.second << "):\n";
+            for (auto val : vals) {
+                cout << "\t" << val << " ";
+            }
+        }
+        cout << endl;
+    } // end gear ratio computation for part 2 
+    cout << endl;
+    cout << "Total gear ratio: " << diff_accumulator << endl;
 }
 
 int main() {
