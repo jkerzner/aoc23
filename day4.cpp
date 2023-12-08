@@ -16,11 +16,18 @@ void part1() {
     ifstream input_file("inputs/day4.txt");
 
     unordered_map<int, pair<vector<int>, vector<int>>> cards;
+    vector<int> cardCount(197, 1);
+    cardCount[0] = 0;
 
     int totalScore = 0;
 
     auto linePattern = regex("Card\\s+(\\d+):\\s+(.*?)\\|(.*?)");
     auto numPattern = regex("\\b(\\d+)\\b");
+
+    for(int i = 0; i < cardCount.size(); i++) {
+        cout << "\t" << cardCount[i] << "   ";
+    }
+    cout << endl;
 
     // read in data
     if (input_file.is_open()) {
@@ -41,45 +48,45 @@ void part1() {
 
                 int card = stoi(m[1].str());
 
-                cout << "\tWinning: ";
+                // cout << "\tWinning: ";
                 string winning = m[2].str();
                 auto numbers_begin = sregex_iterator(winning.begin(), winning.end(), numPattern);
                 auto numbers_end = sregex_iterator();
                 for (auto j = numbers_begin; j != numbers_end; j++) {
                     smatch jm = *j;
                     if (jm.ready()) {
-                        cout << jm.str(0) << " ";
+                        // cout << jm.str(0) << " ";
                         cards[card].first.emplace_back(stoi(jm.str(0)));
                     }
                 }
-                cout << endl;
+                // cout << endl;
 
-                cout << "\tHand: ";
+                // cout << "\tHand: ";
                 string hand = m[3].str();
                 numbers_begin = sregex_iterator(hand.begin(), hand.end(), numPattern);
                 numbers_end = sregex_iterator();
                 for (auto j = numbers_begin; j != numbers_end; j++) {
                     smatch jm = *j;
                     if (jm.ready()) {
-                        cout << jm.str(0) << " ";
+                        // cout << jm.str(0) << " ";
                         cards[card].second.emplace_back(stoi(jm.str(0)));
                     }
                 }
-                cout << endl;
+                // cout << endl;
 
-                cout <<"\tSorted Winning ";
+                // cout <<"\tSorted Winning ";
                 sort(cards[card].first.begin(),  cards[card].first.end());
                 sort(cards[card].second.begin(), cards[card].second.end());
                 for (auto x : cards[card].first) {
-                    cout << x << " ";
+                    // cout << x << " ";
                 }
-                cout << endl;
+                // cout << endl;
 
-                cout <<"\tSorted Hand ";
-                for (auto x : cards[card].second) {
-                    cout << x << " ";
-                }
-                cout << endl;
+                // cout <<"\tSorted Hand ";
+                // for (auto x : cards[card].second) {
+                //     cout << x << " ";
+                // }
+                // cout << endl;
 
                 vector<int> overlap;
                 set<int> winning_set(
@@ -95,16 +102,26 @@ void part1() {
                     }
                 }
  
-                cout << "\t\t";
+                cout << "\t\tOverlap (" << overlap.size() << "): ";
                 for (int n : overlap) {
                     cout << n << " ";
                 }
+                for (int i = 1; i <= overlap.size(); i++) {
+                    if (card + i < cardCount.size()) {
+                        cardCount[card + i] += cardCount[card];
+                    }
+                }
                 cout << endl;
 
-                cout << "\t\tScore: ";
-                if (overlap.size() > 0) {
-                    cout << pow(2, overlap.size() - 1);
-                    totalScore += pow(2, overlap.size() - 1);
+                // cout << "\t\tScore: ";
+                // if (overlap.size() > 0) {
+                //     cout << pow(2, overlap.size() - 1);
+                //     totalScore += pow(2, overlap.size() - 1);
+                // }
+                // cout << endl;
+
+                for(int i = 0; i < cardCount.size(); i++) {
+                    cout << "\t" << cardCount[i] << "   ";
                 }
                 cout << endl;
 
@@ -113,6 +130,12 @@ void part1() {
     }
 
     cout << "Total score is " << totalScore << endl;
+
+    int total = 0;
+    for(auto i : cardCount) {
+        total += i;
+    }
+    cout << "Total number of cards for round 2 is " << total << endl;
 }
 
 int main() {
