@@ -62,30 +62,30 @@ class Mappings {
                 if ( (src >= k.first) && (src <= k.second) ) {
                     distance = src - k.first;
                     rv = destMin + distance;        
-                    cout << "\tFor source " << src << " diff is " << distance << " and dest is " << rv << endl;
+                    // cout << "\tFor source " << src << " diff is " << distance << " and dest is " << rv << endl;
                     return rv;
                 }
             }
 
-            cout << "\tNo mapping for source " << src << " so returning same " << rv << endl;
+            // cout << "\tNo mapping for source " << src << " so returning same " << rv << endl;
             return src;
         }
 };
 
 
-void part1() {
-    ifstream input_file("inputs/day5.txt");
+string buildMaps(
+    vector<pair<string, string>>& propertyMap,
+    map<pair<string, string>, Mappings>& rm
+) {
 
     auto mapDefPattern = regex("([a-z]+)-to-([a-z]+)\\s+map:");
     auto mapLinePattern = regex("(\\d+)\\s+(\\d+)\\s+(\\d+)");
     auto seedLinePattern = regex("seeds:\\s+(.+)");
 
     string seedLine;
-    
-    vector<pair<string, string>> propertyMap;
-    map<pair<string, string>, Mappings> rm;
 
     // read in data
+    ifstream input_file("inputs/day5.txt");
     if (input_file.is_open()) {
         string line;
         smatch m;
@@ -100,14 +100,14 @@ void part1() {
 
             if ( regex_match(line, m, seedLinePattern) ) {
                 seedLine = m[1];
-                cout << "seeds: " << seedLine;
+                // cout << "seeds: " << seedLine;
             }
             else if ( regex_match(line, m, mapDefPattern) ) {
                 currentMap = m[0];
                 currentSrc = m[1];
                 currentDest = m[2];
 
-                cout << "\t" << currentSrc << " -> " << currentDest << endl;
+                // cout << "\t" << currentSrc << " -> " << currentDest << endl;
                 
                 currentPair = pair(currentSrc, currentDest);
 
@@ -121,10 +121,10 @@ void part1() {
                 auto destStart = m[1].str();
                 auto validFor = m[3].str();
 
-                cout << "\t\tsrc  start: " << srcStart << endl;
-                cout << "\t\tdest start: " << destStart << endl;
-                cout << "\t\tvalid  for: " << validFor << endl;
-                cout << "\t\t===" << endl;
+                // cout << "\t\tsrc  start: " << srcStart << endl;
+                // cout << "\t\tdest start: " << destStart << endl;
+                // cout << "\t\tvalid  for: " << validFor << endl;
+                // cout << "\t\t===" << endl;
 
                 if (! rm.contains(currentPair) ) {
                     rm[currentPair] = Mappings();
@@ -137,58 +137,70 @@ void part1() {
                 );
             }
             else {
-                cout << endl;
+                // cout << endl;
             }
         }
     }
 
     cout << "done building map\n";
+    return seedLine;
+}
 
-    // rm[pair("seed", "soil")].getDestFromSrc(49);
-    // rm[pair("seed", "soil")].getDestFromSrc(50);
-    // rm[pair("seed", "soil")].getDestFromSrc(51);
-    // rm[pair("seed", "soil")].getDestFromSrc(52);
-    // rm[pair("seed", "soil")].getDestFromSrc(53);
-    // // ...
-    // rm[pair("seed", "soil")].getDestFromSrc(96);
-    // rm[pair("seed", "soil")].getDestFromSrc(97);
-    // rm[pair("seed", "soil")].getDestFromSrc(98);
-    // rm[pair("seed", "soil")].getDestFromSrc(99);
-    // rm[pair("seed", "soil")].getDestFromSrc(100);
-    // rm[pair("seed", "soil")].getDestFromSrc(101);
-    // rm[pair("seed", "soil")].getDestFromSrc(102);
-    
-    vector<Seed> seeds;
+void part2wrapper(
+    const string& seedLine,
+    vector<pair<string, string>>& propertyMap,
+    map<pair<string, string>, Mappings>& rm
+) {
+    vector<Seed> minBatchSeeds;
     std::regex number("(\\b[0-9]+)\\b");
+
+    // part 2
+    vector<unsigned long long> part2seeds;
+    vector<unsigned long long> builder;
     for(auto i = sregex_iterator(seedLine.begin(), seedLine.end(), number); i != std::sregex_iterator(); ++i) {
-        smatch m = *i;
-        unsigned long long seedNum = strtoull(m.str().c_str(), NULL, 10);
-        cout << seedNum << endl;
-        Seed s = Seed(seedNum);
-
-        for (auto [from, to] : propertyMap) {
-            cout << "FROM " << from << " TO " << to << endl;
-
-            if (from == "seed") {
-                unsigned long long dest = rm[pair(from, to)].getDestFromSrc(seedNum);
-                s.setAttribute(to, dest);
-            }
-            else {
-                unsigned long long src = s.getAttribute(from);
-                unsigned long long dest = rm[pair(from, to)].getDestFromSrc(src);
-                s.setAttribute(to, dest);
-            }
-        }
-        seeds.push_back(s);
-        cout << endl << endl;
+        builder.push_back(stoull(i->str().c_str(), NULL, 10));
     }
 
-    auto m = *min_element(seeds.begin(), seeds.end(), compare);
-    
-    cout << "Part 1: minimum seed number is " << m.getSeedNum() << " at location " << m.getAttribute("location") << endl;
+    unsigned long long globalMinSeed = ULLONG_MAX;
+    unsigned long long globalMinLocation = ULLONG_MAX;
+
+    cout << "Part 2 seeds:\n";
+
+    unsigned long long src, dest;
+
+    for(auto i = 0; i < builder.size() - 1; i+=2) {
+        cout << "\tstart at " << builder[i] << " for " << builder[i+1] << endl;
+        cout << endl;
+
+        for(auto j = builder[i]; j < builder[i] + builder[i+1]; j++) {
+            src = j;
+            dest = j;
+
+            for (auto p : propertyMap) {
+                dest = rm[p].getDestFromSrc(src);
+                // cout << "seed: " << j << " -- " << p.first << " (" << src << ") => " << p.second << " (" << dest << ")\n";
+                src = dest;
+            }
+            // cout << "Location for seed " << j << " is " << dest << endl;
+
+            if (dest < globalMinLocation) {
+                globalMinLocation = dest;
+                globalMinSeed = j;
+            }
+        }
+        cout << endl;
+    }
+    cout << "done with wrapper" << endl;
+    cout << "Min seed " << globalMinSeed << " is at "<< globalMinLocation << endl;
 }
 
 int main() {
-    part1();
+
+    vector<pair<string, string>> propertyMap;
+    map<pair<string, string>, Mappings> rm;
+
+    string seedLine = buildMaps(propertyMap, rm);
+    part2wrapper(seedLine, propertyMap, rm);
+
     return 0;
 }
