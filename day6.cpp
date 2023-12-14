@@ -9,12 +9,15 @@ using namespace std;
 
 int main() {
 
+    bool part1 = false;
+    bool part2 = true;
+
     ifstream input_file("inputs/day6.txt");
 
-    vector<int> times;
-    vector<int> goals;
+    vector<long long> times;
+    vector<long long> goals;
 
-    int comboProduct = 1;
+    long long comboProduct = 1;
 
     auto linePattern = regex("([A-Za-z]+):(.*)");
     auto numPattern = regex("\\b(\\d+)\\b");
@@ -32,15 +35,35 @@ int main() {
 
                 auto numbers_begin = sregex_iterator(nums.begin(), nums.end(), numPattern);
                 auto numbers_end = sregex_iterator();
-                for (auto j = numbers_begin; j != numbers_end; j++) {
-                    smatch jm = *j;
-                    if (jm.ready()) {
-                        if (m[1] == "Time") {
-                            times.push_back(stoi(jm.str()));
+
+                if (part2 == true) {
+                    string builder = "";
+                    for (auto j = numbers_begin; j != numbers_end; j++) {
+                        smatch jm = *j;
+                        if (jm.ready()) {
+                            builder += jm.str();
                         }
-                        else if(m[1] == "Distance") {
-                            goals.push_back(stoi(jm.str()));
-                        }                        
+                    }
+
+                    if (m[1] == "Time") {
+                        times.push_back(stoll(builder));
+                    }
+                    else if (m[1] == "Distance") {
+                        goals.push_back(stoll(builder));
+                    }
+                }
+
+                if (part1 == true ) {
+                    for (auto j = numbers_begin; j != numbers_end; j++) {
+                        smatch jm = *j;
+                        if (jm.ready()) {
+                            if (m[1] == "Time") {
+                                times.push_back(stoi(jm.str()));
+                            }
+                            else if(m[1] == "Distance") {
+                                goals.push_back(stoi(jm.str()));
+                            }                        
+                        }
                     }
                 }
             }
@@ -57,7 +80,7 @@ int main() {
         double maxTime = ((-b) - sqrt( (pow(b, 2.0) - (4.0 * a * c)) )) / (2.0 * a);
         
         //fractional?
-        int realMin, realMax;
+        long long realMin, realMax;
         double intPart, fractionPart;
         
         fractionPart = std::modf(minTime, &intPart);
