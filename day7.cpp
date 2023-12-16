@@ -1,44 +1,48 @@
 #include <algorithm>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <map>
 #include <ranges>
+#include <regex>
 #include <unordered_set>
+
 
 using namespace std;
 
-const unordered_set<unsigned> fourOfAKind = {4, 1};
-const unordered_set<unsigned> fullHouse = {3, 2};
-const unordered_set<unsigned> threeOfAKind = {3, 1, 1};
-const unordered_set<unsigned> twoPair = {2, 2, 1};
+const unordered_multiset<unsigned> fourOfAKind = {4, 1};
+const unordered_multiset<unsigned> fullHouse = {3, 2};
+const unordered_multiset<unsigned> threeOfAKind = {3, 1, 1};
+const unordered_multiset<unsigned> twoPair = {2, 2, 1};
 
-int computeHandType();
+unsigned computeHandStrenght();
 
 
-int main() {
-    vector<string> hand = {"A", "2", "3", "A", "4"};
-    map<string, unsigned> cardinalities;
+unsigned computeHandString(string hand) {
+
+    cout << "Hand is " << hand << endl;
+    map<char, unsigned> cardinalities;
     
     string builder = "";
 
     for ( auto& c : hand) {
         cardinalities[c] += 1;
 
-        if (c == "A") {
-            c = "e";
+        if (c == 'A') {
+            c = 'e';
         }
-        else if(c == "K") {
-            c = "d";
+        else if(c == 'K') {
+            c = 'd';
         }
-        else if(c == "Q") {
-            c = "c";
+        else if(c == 'Q') {
+            c = 'c';
         }
-        else if(c == "J") {
-            c = "b";
+        else if(c == 'J') {
+            c = 'b';
         }
-        else if(c == "T") {
-            c = "a";
+        else if(c == 'T') {
+            c = 'a';
         }
         builder += c;
     }
@@ -64,7 +68,7 @@ int main() {
         // todo - these all need to return
     }
 
-    unordered_set<unsigned> cardinalityValues;
+    unordered_multiset<unsigned> cardinalityValues;
     for(auto const &[k, v] : cardinalities){
         cardinalityValues.emplace(v);
     }
@@ -91,6 +95,41 @@ int main() {
     }
 
     cout << "Hand complete rank " << handScore + cardOrderScore << endl;
+    cout << endl;
+    return handScore + cardOrderScore;
+}
+
+
+int main() {
+    auto linePattern = regex("([A-Za-z0-9]+)\\s+(\\d+)");
+
+    ifstream input_file("inputs/day7.txt");
+    
+    map<unsigned, pair<string, unsigned>> result;
+
+    if (input_file.is_open()) {
+        string line;
+        smatch m;
+        while(getline(input_file, line)) {
+            if ( regex_match(line, m, linePattern)) {
+                auto hand = m[1].str();
+                auto bid = m[2].str();
+                auto strength = computeHandString(hand);
+                result[strength] = pair(hand, stoi(bid));
+            }
+        }
+    }
+
+    unsigned long long winnings = 0;
+    unsigned rank = 1;
+
+    for (auto i = result.begin(); i != result.end(); ++i) {
+        // cout << rank << " " << i->second.first << " " << i->second.second << endl;
+        winnings += (rank * i->second.second);
+        rank++;
+    }
+
+    cout << "Total winnings are " << winnings << endl;
 
     return 0;
 }
