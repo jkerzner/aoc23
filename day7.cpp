@@ -7,7 +7,7 @@
 #include <ranges>
 #include <regex>
 #include <unordered_set>
-
+#include <iomanip>
 
 using namespace std;
 
@@ -19,9 +19,9 @@ const unordered_multiset<unsigned> twoPair = {2, 2, 1};
 
 string buildCardinalityMap(string hand, map<char, unsigned>& cardinalities);
 
-unsigned computeHandStrength(string hand, map<char, unsigned int>& cardinalities);
+unsigned computeHandStrength(string hand, map<char, unsigned int>& cardinalitie, string& resultType);
 
-unsigned computeJokerHandStrength(string hand);
+unsigned computeJokerHandStrength(string hand, string& resultType);
 
 unsigned computePart1HandStrength(string hand);
 
@@ -70,7 +70,7 @@ vector<vector<T>> comboBuilder(const vector<T>& candidates, unsigned len) {
 }
 
 string buildCardinalityMap(string hand, map<char, unsigned>& cardinalities) {
-    cout << "Hand is " << hand << endl;
+    // cout << "Hand is " << hand << endl;
     
     string builder = "";
 
@@ -87,7 +87,7 @@ string buildCardinalityMap(string hand, map<char, unsigned>& cardinalities) {
             c = 'c';
         }
         else if(c == 'J') {
-            c = 'b';
+            c = '1';
         }
         else if(c == 'T') {
             c = 'a';
@@ -95,32 +95,30 @@ string buildCardinalityMap(string hand, map<char, unsigned>& cardinalities) {
         builder += c;
     }
 
-    cout << "hex builder for hand is 0x" << builder << endl;
+   // cout << "hex builder for hand is 0x" << builder << endl;
     return builder;
 }
 
-unsigned computePart1HandStrength(string hand){
-    map<char, unsigned> cardinalities;
-    string hexHand = buildCardinalityMap(hand, cardinalities);
-    return computeHandStrength(hexHand, cardinalities);
-}
+// unsigned computePart1HandStrength(string hand){
+//     map<char, unsigned> cardinalities;
+//     string hexHand = buildCardinalityMap(hand, cardinalities);
+//     return computeHandStrength(hexHand, cardinalities);
+// }
 
 
-unsigned computeHandStrength(string hexHand, map<char, unsigned int>& cardinalities) {
-    unsigned cardOrderScore = stoi(hexHand, nullptr, 16);
-    cout << hexHand << " is card level " << cardOrderScore << endl;
+unsigned computeHandTypeRank(map<char, unsigned int>& cardinalities, string& testTypeResult) {
 
     unsigned handScore = 0x0;
     if (cardinalities.size() == 1){
-        cout << "five of a kind" << endl;
+        testTypeResult = "five of a kind";
         handScore = 0x700000;
     }
     else if (cardinalities.size() == 4) {
-        cout << "one pair" << endl;
+        testTypeResult = "one pair";
         handScore = 0x200000;
     }
     else if (cardinalities.size() == 5) {
-        cout << "high card" << endl;
+        testTypeResult = "high card";
         handScore = 0x100000;
     }
 
@@ -130,19 +128,62 @@ unsigned computeHandStrength(string hexHand, map<char, unsigned int>& cardinalit
     }
 
     if (cardinalityValues == fourOfAKind) {
-        cout << "four of a kind" << endl;
+        testTypeResult = "four of a kind";
         handScore = 0x600000;
     }
     else if (cardinalityValues == fullHouse) {
-        cout << "full house" << endl;
+        testTypeResult = "full house";
         handScore = 0x500000;
     }
     else if (cardinalityValues == threeOfAKind) {
-        cout << "three of a kind" << endl;
+        testTypeResult = "three of a kind";
         handScore = 0x400000;
     }
     else if (cardinalityValues == twoPair) {
-        cout << "two pair" << endl;
+        testTypeResult = "two pair";
+        handScore = 0x300000;
+    }
+
+    return handScore;
+}
+
+unsigned computeHandStrength(string hexHand, map<char, unsigned int>& cardinalities, string& testTypeResult) {
+    unsigned cardOrderScore = stoi(hexHand, nullptr, 16);
+    // cout << hexHand << " is card level " << cardOrderScore << endl;
+
+    unsigned handScore = 0x0;
+    if (cardinalities.size() == 1){
+        testTypeResult = "five of a kind";
+        handScore = 0x700000;
+    }
+    else if (cardinalities.size() == 4) {
+        testTypeResult = "one pair";
+        handScore = 0x200000;
+    }
+    else if (cardinalities.size() == 5) {
+        testTypeResult = "high card";
+        handScore = 0x100000;
+    }
+
+    unordered_multiset<unsigned> cardinalityValues;
+    for(auto const &[k, v] : cardinalities){
+        cardinalityValues.emplace(v);
+    }
+
+    if (cardinalityValues == fourOfAKind) {
+        testTypeResult = "four of a kind";
+        handScore = 0x600000;
+    }
+    else if (cardinalityValues == fullHouse) {
+        testTypeResult = "full house";
+        handScore = 0x500000;
+    }
+    else if (cardinalityValues == threeOfAKind) {
+        testTypeResult = "three of a kind";
+        handScore = 0x400000;
+    }
+    else if (cardinalityValues == twoPair) {
+        testTypeResult = "two pair";
         handScore = 0x300000;
     }
 
@@ -152,29 +193,31 @@ unsigned computeHandStrength(string hexHand, map<char, unsigned int>& cardinalit
 }
 
 
-unsigned computeJokerHandStrength(string hand) {
+unsigned computeJokerHandStrength(string hand, string& resultType) {
 
+    cout << "========== TOP ==========" << endl;
     // Jokers are mapped to 0xb
     auto jokerCount = ranges::count(hand, 'J');
 
-    cout << "\t[JOKER] " << hand << endl;
-
-    string hexHand;
     map<char, unsigned> cardinalities;
+    string hexHand = buildCardinalityMap(hand, cardinalities);
+    auto originalHandStrength = computeHandStrength(hexHand, cardinalities, resultType);    
 
+    // short circuit to reduce the search space
     if (jokerCount == 0) {
-        cout << "\t[JOKER] " << "nothing to remap" << endl;
-        string hexHand = buildCardinalityMap(hand, cardinalities);
-        return computeHandStrength(hexHand, cardinalities);
+        cout << "Unchanged " << hand << " with strength " << originalHandStrength << endl;
+        cout << "========== BOTTOM ==========" << endl;
+        return originalHandStrength;
     }
     else if(jokerCount == 5) {
-        cout << "\t[JOKER] " << "was all J so all A" << endl;
         string hexHand = buildCardinalityMap("AAAAA", cardinalities);
-        return computeHandStrength(hexHand, cardinalities);
+        cout << "All jokers " << hand << " to " << "AAAAA with strength " << originalHandStrength << endl;
+        resultType = "five of a kind";
+        cout << "========== BOTTOM ==========" << endl;
+        return originalHandStrength;
     }
 
     vector<char> nonJokerCards;
-
     for(char c : hand) {
         if (c != 'J') {
             nonJokerCards.push_back(c);
@@ -184,6 +227,7 @@ unsigned computeJokerHandStrength(string hand) {
     auto combos = comboBuilder(nonJokerCards, jokerCount);
     unsigned maxScore = 0;
     string maxHand;
+    string maxHandType;
 
     for (auto combo : combos) {
         string testCase = "";
@@ -199,19 +243,23 @@ unsigned computeJokerHandStrength(string hand) {
                 ++k;
             }
         }
-        cardinalities.clear();
-        auto testHexHand = buildCardinalityMap(testCase, cardinalities);
+        map<char, unsigned> testCardinalities;
+        auto testHexHand = buildCardinalityMap(testCase, testCardinalities);
 
-        // TODO: original hand breaks ties
+        string testTypeResult;
+        unsigned testHandStrength = 0;
+        testHandStrength += computeHandTypeRank(testCardinalities, testTypeResult);
+        testHandStrength += stoi(hexHand, nullptr, 16);
 
-        auto handStrength = computeHandStrength(testHexHand, cardinalities);
-
-        if (handStrength > maxScore) {
-            maxScore = handStrength;
+        if (testHandStrength > maxScore) {
+            maxScore = testHandStrength;
             maxHand = testCase;
+            maxHandType = testTypeResult;
         }
     }
-    cout << "For original hand " << hand << " the best combo is " << hand << " ===> " << maxHand << " with stength " << maxScore << endl;
+    resultType = maxHandType;
+    cout << "For original hand " << hand << " the best combo is " << maxHandType << " ===> " << maxHand << " with stength " << maxScore << endl;
+    cout << "========== BOTTOM ==========" << endl;
     return maxScore;
 }
 
@@ -220,7 +268,7 @@ int main() {
 
     ifstream input_file("inputs/day7.txt");
     
-    map<unsigned, pair<string, unsigned>> result;
+    map<unsigned, pair<pair<string, string>, unsigned>> result;
 
     if (input_file.is_open()) {
         string line;
@@ -230,13 +278,17 @@ int main() {
                 auto hand = m[1].str();
                 auto bid = m[2].str();
 
+                string resultType;
                 // auto strength = computeFixedHandStrength(hand);
-                auto strength = computeJokerHandStrength(hand);
+                auto strength = computeJokerHandStrength(hand, resultType);
+                cout << endl << endl ;
                 if (result.contains(strength)) {
-                    cout << "duplicate strength detected!" << endl;
+                    cout << "duplicate strength " << strength <<  " detected!" << endl;
+                    cout << "existing: " << result[strength].first.first << " with bid " << bid << endl;
+                    cout << "new: " << hand << " with bid " << bid << endl;
                     exit(1);
                 }
-                result[strength] = pair(hand, stoi(bid));
+                result[strength] = pair(pair(hand, resultType), stoi(bid));
             }
         }
     }
@@ -245,7 +297,7 @@ int main() {
     unsigned rank = 1;
 
     for (auto i = result.begin(); i != result.end(); ++i) {
-        cout << rank << " " << i->second.first << " " << i->second.second << endl;
+        cout << setw(3) << rank << ". " << i->first << ": " << i->second.first.first << " is " << i->second.first.second << endl;
         winnings += (rank * i->second.second);
         rank++;
     }
