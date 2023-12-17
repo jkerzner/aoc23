@@ -23,9 +23,51 @@ unsigned computeHandStrength(string hand, map<char, unsigned int>& cardinalities
 
 unsigned computeJokerHandStrength(string hand);
 
-unsigned computeFixedHandStrength(string hand);
+unsigned computePart1HandStrength(string hand);
+
+template <typename T>
+vector<vector<T>> comboBuilder(const vector<T>& input, unsigned len);
 
 // end headers
+
+template <typename T>
+vector<vector<T>> comboBuilder(const vector<T>& candidates, unsigned len) {
+    // for(auto i = 0; i < len; ++i) {
+    //     cout << "\t";
+    // }
+    // cout << len << ": ";
+    // for(auto i : candidates) {
+    //     cout << i;
+    // }
+    // cout << endl;
+    vector<vector<T>> rv;
+
+    // base case add single card
+    if (len == 1) {
+        for (auto i : candidates) {
+            // cout << "base case " << i << endl;
+            rv.push_back( {i} );
+        }
+        return rv;
+    }
+
+    vector<vector<T>> shorterCombos = comboBuilder(candidates, len - 1);
+
+    // 2 or 3 cards
+    for (auto i : candidates) {
+        for (vector<T> sv : shorterCombos) {
+            sv.push_back(i);
+            rv.push_back(sv);
+        }
+    }
+    // for (auto v : rv) {
+    //     for(auto i : v) {
+    //         cout << i << " ";
+    //     }
+    // cout << endl;
+    // }
+    return rv;
+}
 
 string buildCardinalityMap(string hand, map<char, unsigned>& cardinalities) {
     cout << "Hand is " << hand << endl;
@@ -57,7 +99,7 @@ string buildCardinalityMap(string hand, map<char, unsigned>& cardinalities) {
     return builder;
 }
 
-unsigned computeFixedHandStrength(string hand){
+unsigned computePart1HandStrength(string hand){
     map<char, unsigned> cardinalities;
     string hexHand = buildCardinalityMap(hand, cardinalities);
     return computeHandStrength(hexHand, cardinalities);
@@ -115,18 +157,62 @@ unsigned computeJokerHandStrength(string hand) {
     // Jokers are mapped to 0xb
     auto jokerCount = ranges::count(hand, 'J');
 
+    cout << "\t[JOKER] " << hand << endl;
+
     string hexHand;
     map<char, unsigned> cardinalities;
 
     if (jokerCount == 0) {
+        cout << "\t[JOKER] " << "nothing to remap" << endl;
         string hexHand = buildCardinalityMap(hand, cardinalities);
         return computeHandStrength(hexHand, cardinalities);
     }
     else if(jokerCount == 5) {
+        cout << "\t[JOKER] " << "was all J so all A" << endl;
         string hexHand = buildCardinalityMap("AAAAA", cardinalities);
         return computeHandStrength(hexHand, cardinalities);
     }
-    return 0;
+
+    vector<char> nonJokerCards;
+
+    for(char c : hand) {
+        if (c != 'J') {
+            nonJokerCards.push_back(c);
+        }
+    }
+
+    auto combos = comboBuilder(nonJokerCards, jokerCount);
+    unsigned maxScore = 0;
+    string maxHand;
+
+    for (auto combo : combos) {
+        string testCase = "";
+        unsigned k = 0;
+
+        for(auto i = 0; i < hand.size(); ++i) {
+            if (hand[i] != 'J') {
+                testCase.push_back(hand[i]);
+                continue;
+            }
+            else {
+                testCase.push_back(combo[k]);
+                ++k;
+            }
+        }
+        cardinalities.clear();
+        auto testHexHand = buildCardinalityMap(testCase, cardinalities);
+
+        // TODO: original hand breaks ties
+
+        auto handStrength = computeHandStrength(testHexHand, cardinalities);
+
+        if (handStrength > maxScore) {
+            maxScore = handStrength;
+            maxHand = testCase;
+        }
+    }
+    cout << "For original hand " << hand << " the best combo is " << hand << " ===> " << maxHand << " with stength " << maxScore << endl;
+    return maxScore;
 }
 
 int main() {
@@ -144,8 +230,12 @@ int main() {
                 auto hand = m[1].str();
                 auto bid = m[2].str();
 
-                auto strength = computeFixedHandStrength(hand);
-                //auto strength = computeJokerHandStrength(hand);
+                // auto strength = computeFixedHandStrength(hand);
+                auto strength = computeJokerHandStrength(hand);
+                if (result.contains(strength)) {
+                    cout << "duplicate strength detected!" << endl;
+                    exit(1);
+                }
                 result[strength] = pair(hand, stoi(bid));
             }
         }
@@ -155,7 +245,7 @@ int main() {
     unsigned rank = 1;
 
     for (auto i = result.begin(); i != result.end(); ++i) {
-        // cout << rank << " " << i->second.first << " " << i->second.second << endl;
+        cout << rank << " " << i->second.first << " " << i->second.second << endl;
         winnings += (rank * i->second.second);
         rank++;
     }
